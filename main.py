@@ -13,7 +13,15 @@ def handle_connection(switch_ip):
 
 def main():
     get_ip_address = input("Enter switch IP: ")
-    switch_connect = handle_connection(get_ip_address)
+
+    try:
+        switch_connect = handle_connection(get_ip_address)
+    except exceptions.NetmikoAuthenticationException:
+        print("[-] Invalid username or password.")
+        return
+    except exceptions.NetmikoTimeoutException:
+        print("[-] Connection timeout.")
+        return
 
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
 
@@ -21,11 +29,19 @@ def main():
 
     for interface in int_status:
         if interface['status'] == "notconnect":
-            print("Interface [ {sp} ] is notconnect.".format(sp=interface['port']))
+            print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
             unconnected_switchports.append(interface)
+            time.sleep(0.3)
+    
+    print("Loading interface statistics.")
+
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n[!] Exiting via keyboard input.")
+    
     print("PatchFinder Done")
 
