@@ -1,3 +1,14 @@
+"""
+TODO
+- Add stat counter, maybe through sh int <INT> ['packets_in' & 'packets_out']
+- Add switch uptime checker, 'show version'
+- Add highest interface stat checker & percentage comparison
+    - Iterate all interfaces, get packets_in and packets_out
+    - Store highest in global
+    - Iterate all notconnect interfaces, create percentage between
+    - Display lowest percentages
+"""
+
 from netmiko import ConnectHandler, exceptions
 from ciscoconfparse import CiscoConfParse
 from dotenv import load_dotenv
@@ -23,15 +34,16 @@ def main():
         print("[-] Connection timeout.")
         return
 
-    int_status = switch_connect.send_command("sh int status", use_textfsm=True)
+    int_status = switch_connect.send_command("sh int gi0/12", use_textfsm=True)
+    print(int_status)
 
-    unconnected_switchports = []
+    # unconnected_switchports = []
 
-    for interface in int_status:
-        if interface['status'] == "notconnect":
-            print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
-            unconnected_switchports.append(interface)
-            time.sleep(0.3)
+    # for interface in int_status:
+    #     if interface['status'] == "notconnect":
+    #         print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
+    #         unconnected_switchports.append(interface)
+    #         time.sleep(0.3)
     
     print("Loading interface statistics.")
 
