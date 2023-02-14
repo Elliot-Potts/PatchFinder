@@ -34,18 +34,23 @@ def main():
         print("[-] Connection timeout.")
         return
 
-    int_status = switch_connect.send_command("sh int gi0/12", use_textfsm=True)
-    print(int_status)
+    int_status = switch_connect.send_command("sh int status", use_textfsm=True)
+    # print(int_status)
 
-    # unconnected_switchports = []
+    unconnected_switchports = {}
 
-    # for interface in int_status:
-    #     if interface['status'] == "notconnect":
-    #         print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
-    #         unconnected_switchports.append(interface)
-    #         time.sleep(0.3)
-    
+    for interface in int_status:
+        if interface['status'] == "notconnect":
+            print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
+            get_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
+            get_stats = (get_stats['input_packets'], get_stats['output_packets'])
+            print(get_stats)
+            # unconnected_switchports[interface['port']] = switch_connect.send_command('show int {}'.format(interface['port']))
+
+    time.sleep(1)
     print("Loading interface statistics.")
+
+    # for notconnect in unconnected_switchports:
 
 
 
