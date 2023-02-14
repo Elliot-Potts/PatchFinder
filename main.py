@@ -41,17 +41,20 @@ def main():
 
     for interface in int_status:
         if interface['status'] == "notconnect":
-            print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
+            # print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
             get_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
             get_stats = (get_stats['input_packets'], get_stats['output_packets'])
-            print(get_stats)
-            # unconnected_switchports[interface['port']] = switch_connect.send_command('show int {}'.format(interface['port']))
+            unconnected_switchports[interface['port']] = get_stats
 
-    time.sleep(1)
-    print("Loading interface statistics.")
+    title = "-"*5 + " Not-connect Switchports " + "-"*5
+    print(title + "\nPort\tInput\tOutput\n")
 
-    # for notconnect in unconnected_switchports:
-
+    for dc_switchport in unconnected_switchports:
+        print("{switch_port}\t{input_packets}\t{output_packets}".format(
+            switch_port=dc_switchport,
+            input_packets=unconnected_switchports[dc_switchport][0],
+            output_packets=unconnected_switchports[dc_switchport][1]
+        ))
 
 
 if __name__ == "__main__":
@@ -59,6 +62,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\n\n[!] Exiting via keyboard input.")
-    
-    print("PatchFinder Done")
 
