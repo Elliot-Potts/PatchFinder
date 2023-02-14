@@ -1,6 +1,5 @@
 """
 TODO
-- Add stat counter, maybe through sh int <INT> ['packets_in' & 'packets_out']
 - Add switch uptime checker, 'show version'
 - Add highest interface stat checker & percentage comparison
     - Iterate all interfaces, get packets_in and packets_out
