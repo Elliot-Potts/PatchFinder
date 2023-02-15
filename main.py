@@ -52,10 +52,10 @@ def main():
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
 
-    print(all_stats)
-    print("max: " + str(max(all_stats)))
+    # print(all_stats)
+    # print("max: " + str(max(all_stats)))
 
-    title = "-"*5 + " Not-connect Switchports " + "-"*5
+    title = "-"*16 + " Not-connect Switchports " + "-"*16
     print(title + "\nPort\t\tInput\t\tOutput\t\t%diff")
 
     for dc_switchport in unconnected_switchports:
@@ -66,7 +66,7 @@ def main():
             switch_port=dc_switchport,
             input_packets=in_packets,
             output_packets=out_packets,
-            percent_diff=str( ((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100 )
+            percent_diff=str(round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2))
         ))
 
 
