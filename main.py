@@ -1,10 +1,9 @@
 """
 TODO
-- Add switch uptime checker, 'show version'
 - Add highest interface stat checker & percentage comparison
     - Iterate all interfaces, get packets_in and packets_out
-    - Store highest in global
-    - Iterate all notconnect interfaces, create percentage between
+    - Store highest (packets_in+packets_out) in global
+    - Iterate all notconnect interfaces, create percentage between highest global
     - Display lowest percentages
 """
 
@@ -18,6 +17,7 @@ import os
 
 def handle_connection(switch_ip):
     load_dotenv()
+    # print(os.environ.get("S_USERNAME"), os.environ.get("S_PASSWORD"))
     return ConnectHandler(host=switch_ip, username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
 
 
@@ -33,23 +33,33 @@ def main():
         print("[-] Connection timeout.")
         return
 
+    print("Connected to {}\n".format(get_ip_address))
+    switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
-    # print(int_status)
+    print("Switch uptime is:\t{}\n".format(switch_uptime))
 
+    all_stats = []
     unconnected_switchports = {}
 
     for interface in int_status:
+        get_int_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
+        get_int_stats = (get_int_stats['input_packets'], get_int_stats['output_packets'])
+
         if interface['status'] == "notconnect":
             # print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
-            get_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
-            get_stats = (get_stats['input_packets'], get_stats['output_packets'])
-            unconnected_switchports[interface['port']] = get_stats
+            unconnected_switchports[interface['port']] = get_int_stats
+        
+        all_stats.append(get_int_stats)
+    
+    print(len(all_stats))
+    print(all_stats)
+    print("max: " + str(max(all_stats,key=lambda x:x[0])))
 
     title = "-"*5 + " Not-connect Switchports " + "-"*5
-    print(title + "\nPort\tInput\tOutput\n")
+    print(title + "\nPort\t\tInput\t\tOutput")
 
     for dc_switchport in unconnected_switchports:
-        print("{switch_port}\t{input_packets}\t{output_packets}".format(
+        print("{switch_port}\t\t{input_packets}\t\t{output_packets}".format(
             switch_port=dc_switchport,
             input_packets=unconnected_switchports[dc_switchport][0],
             output_packets=unconnected_switchports[dc_switchport][1]
