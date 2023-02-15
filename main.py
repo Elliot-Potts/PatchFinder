@@ -1,10 +1,5 @@
 """
 TODO
-- Add highest interface stat checker & percentage comparison
-    - Iterate all interfaces, get packets_in and packets_out    [+]
-    - Store highest (packets_in+packets_out) in global          [+]
-    - Iterate all notconnect interfaces, create percentage between highest global
-    - Display lowest percentages
 - Fix/add better output formatting?
 """
 
