@@ -48,12 +48,12 @@ def main():
         if interface['status'] == "notconnect":
             # print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
             unconnected_switchports[interface['port']] = get_int_stats
-        
-        all_stats.append(get_int_stats)
+
+        stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
+        all_stats.append(stats_total)
     
     print(len(all_stats))
     print(all_stats)
-    print("max: " + str(max(all_stats,key=lambda x:x[0])))
 
     title = "-"*5 + " Not-connect Switchports " + "-"*5
     print(title + "\nPort\t\tInput\t\tOutput")
