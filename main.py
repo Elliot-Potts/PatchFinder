@@ -1,14 +1,14 @@
 """
 TODO
 - Add highest interface stat checker & percentage comparison
-    - Iterate all interfaces, get packets_in and packets_out
-    - Store highest (packets_in+packets_out) in global
+    - Iterate all interfaces, get packets_in and packets_out    [+]
+    - Store highest (packets_in+packets_out) in global          [+]
     - Iterate all notconnect interfaces, create percentage between highest global
     - Display lowest percentages
+- Fix/add better output formatting?
 """
 
 from netmiko import ConnectHandler, exceptions
-from ciscoconfparse import CiscoConfParse
 from dotenv import load_dotenv
 from pprint import pprint
 import time
@@ -51,18 +51,22 @@ def main():
 
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
-    
-    print(len(all_stats))
+
     print(all_stats)
+    print("max: " + str(max(all_stats)))
 
     title = "-"*5 + " Not-connect Switchports " + "-"*5
-    print(title + "\nPort\t\tInput\t\tOutput")
+    print(title + "\nPort\t\tInput\t\tOutput\t\t%diff")
 
     for dc_switchport in unconnected_switchports:
-        print("{switch_port}\t\t{input_packets}\t\t{output_packets}".format(
+        in_packets = unconnected_switchports[dc_switchport][0]
+        out_packets = unconnected_switchports[dc_switchport][1]
+
+        print("{switch_port}\t\t{input_packets}\t\t{output_packets}\t\t{percent_diff}%".format(
             switch_port=dc_switchport,
-            input_packets=unconnected_switchports[dc_switchport][0],
-            output_packets=unconnected_switchports[dc_switchport][1]
+            input_packets=in_packets,
+            output_packets=out_packets,
+            percent_diff=str( ((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100 )
         ))
 
 
