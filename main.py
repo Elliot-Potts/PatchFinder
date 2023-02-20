@@ -5,6 +5,8 @@ TODO
 - Build connection modules / remove hardcoding
 """
 
+from rich.console import Console
+from rich.table import Table
 from netmiko import ConnectHandler, exceptions
 from dotenv import load_dotenv
 import os
@@ -12,11 +14,12 @@ import os
 
 def handle_connection(switch_ip):
     load_dotenv()
-    # print(os.environ.get("S_USERNAME"), os.environ.get("S_PASSWORD"))
     return ConnectHandler(host=switch_ip, username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
 
 
 def main():
+    rich_console = Console()
+
     get_ip_address = input("Enter switch IP: ")
 
     try:
@@ -28,10 +31,11 @@ def main():
         print("[-] Connection timeout.")
         return
 
-    print("Connected to {}\n".format(get_ip_address))
+    # print("Connected to {}\n".format(get_ip_address))
+    rich_console.print("[green]Connected to [bold]{}[/]".format(get_ip_address))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
-    print("Switch uptime is:\t{}\n".format(switch_uptime))
+    print("Switch uptime is: {}\n".format(switch_uptime))
 
     all_stats = []
     unconnected_switchports = {}
@@ -42,33 +46,48 @@ def main():
         get_int_stats = (get_int_stats['input_packets'], get_int_stats['output_packets'])
 
         if interface['status'] == "notconnect":
-            # print("\tInterface [ {sp} ] is notconnect.".format(sp=interface['port']))
             unconnected_switchports[interface['port']] = get_int_stats
 
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
 
 
-    print("Not-connect switchports")
-    print("{:-<50}\n{:<10} {:<10} {:<10} {:<10}".format("-","Port", "Input", "Output", "Difference"))
+    # print("Not-connect switchports")
+    # print("{:-<50}\n{:<10} {:<10} {:<10} {:<10}".format("-","Port", "Input", "Output", "Difference"))
 
     interface_percentages = []
+
+    rich_console.print("[bold underline]Nonconnect Switchports[/]\n")
+
+    table = Table(show_header=True, header_style="bold green")
+    table.add_column("Port")
+    table.add_column("Input Packets")
+    table.add_column("Output Packets")
+    table.add_column("Difference (%)")
 
     for dc_switchport in unconnected_switchports:
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
         make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
 
-        print("{:<10} {:<10} {:<10} {:<10}%".format(
+        # print("{:<10} {:<10} {:<10} {:<10}%".format(
+        #     dc_switchport,
+        #     in_packets,
+        #     out_packets,
+        #     make_percentage
+        # ))
+
+        table.add_row(
             dc_switchport,
             in_packets,
             out_packets,
-            make_percentage
-        ))
+            str(make_percentage),
+        )
 
         interface_percentages.append([make_percentage, dc_switchport])
     
     interface_percentages = sorted(interface_percentages, key=lambda x: x[0])
+    rich_console.print(table)
 
     print("{:-<50}\nInterface {int} has {usage}% the usage of the highest on the switch.".format(
         "-",
