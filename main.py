@@ -50,17 +50,30 @@ def main():
     print("Not-connect switchports\n" + "-"*23)
     print("{:<10} {:<10} {:<10} {:<10}".format("Port", "Input", "Output", "Difference"))
 
+    interface_percentages = []
 
     for dc_switchport in unconnected_switchports:
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
+        make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
 
         print("{:<10} {:<10} {:<10} {:<10}%".format(
             dc_switchport,
             in_packets,
             out_packets,
-            str(round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
-        )))
+            make_percentage
+        ))
+
+        interface_percentages.append([make_percentage, dc_switchport])
+    
+    interface_percentages = sorted(interface_percentages, key=lambda x: x[0])
+
+    print("-"*23 + "\nInterface {int} has {usage}% the usage of the highest on the switch.".format(
+        int=interface_percentages[0][1],
+        usage=interface_percentages[0][0]
+    ))
+    
+    
 
 
 if __name__ == "__main__":
