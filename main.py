@@ -1,6 +1,8 @@
 """
 TODO
 - Confirm reliability parsing stackable switches
+- Console formatting, Rich?
+- Build connection modules / remove hardcoding
 """
 
 from netmiko import ConnectHandler, exceptions
