@@ -1,6 +1,5 @@
 """
 TODO
-- Confirm reliability of in+out packets for usage checks
 - Confirm reliability parsing stackable switches
 """
 
@@ -35,6 +34,7 @@ def main():
     all_stats = []
     unconnected_switchports = {}
 
+
     for interface in int_status:
         get_int_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
         get_int_stats = (get_int_stats['input_packets'], get_int_stats['output_packets'])
@@ -46,8 +46,10 @@ def main():
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
 
+
     print("Not-connect switchports\n" + "-"*23)
     print("{:<10} {:<10} {:<10} {:<10}".format("Port", "Input", "Output", "Difference"))
+
 
     for dc_switchport in unconnected_switchports:
         in_packets = unconnected_switchports[dc_switchport][0]
