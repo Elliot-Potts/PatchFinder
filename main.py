@@ -1,6 +1,7 @@
 """
 TODO
-- Fix/add better output formatting?
+- Confirm reliability of in+out packets for usage checks
+- Confirm reliability parsing stackable switches
 """
 
 from netmiko import ConnectHandler, exceptions
@@ -45,22 +46,19 @@ def main():
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
 
-    # print(all_stats)
-    # print("max: " + str(max(all_stats)))
-
-    title = "-"*16 + " Not-connect Switchports " + "-"*16
-    print(title + "\nPort\t\tInput\t\tOutput\t\t%diff")
+    print("Not-connect switchports\n" + "-"*23)
+    print("{:<10} {:<10} {:<10} {:<10}".format("Port", "Input", "Output", "Difference"))
 
     for dc_switchport in unconnected_switchports:
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
 
-        print("{switch_port}\t\t{input_packets}\t\t{output_packets}\t\t{percent_diff}%".format(
-            switch_port=dc_switchport,
-            input_packets=in_packets,
-            output_packets=out_packets,
-            percent_diff=str(round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2))
-        ))
+        print("{:<10} {:<10} {:<10} {:<10}%".format(
+            dc_switchport,
+            in_packets,
+            out_packets,
+            str(round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
+        )))
 
 
 if __name__ == "__main__":
