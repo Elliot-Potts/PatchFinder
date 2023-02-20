@@ -47,8 +47,8 @@ def main():
         all_stats.append(stats_total)
 
 
-    print("Not-connect switchports\n" + "-"*23)
-    print("{:<10} {:<10} {:<10} {:<10}".format("Port", "Input", "Output", "Difference"))
+    print("Not-connect switchports")
+    print("{:-<50}\n{:<10} {:<10} {:<10} {:<10}".format("-","Port", "Input", "Output", "Difference"))
 
     interface_percentages = []
 
@@ -68,12 +68,11 @@ def main():
     
     interface_percentages = sorted(interface_percentages, key=lambda x: x[0])
 
-    print("-"*23 + "\nInterface {int} has {usage}% the usage of the highest on the switch.".format(
+    print("{:-<50}\nInterface {int} has {usage}% the usage of the highest on the switch.".format(
+        "-",
         int=interface_percentages[0][1],
         usage=interface_percentages[0][0]
     ))
-    
-    
 
 
 if __name__ == "__main__":
