@@ -1,14 +1,16 @@
 """
 TODO
 - Confirm reliability parsing stackable switches
-- Console formatting, Rich?
-- Build connection modules / remove hardcoding
+- Build connection modules / remove hardcoding... make this more cohesive
+-- Better port/stat data structure
 """
 
-from rich.console import Console
-from rich.table import Table
 from netmiko import ConnectHandler, exceptions
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.prompt import Prompt
+from rich.panel import Panel
+from rich.table import Table
 import os
 
 
@@ -18,28 +20,26 @@ def handle_connection(switch_ip):
 
 
 def main():
-    rich_console = Console()
+    rich_console = Console(record=True)
 
-    get_ip_address = input("Enter switch IP: ")
+    get_ip_address = Prompt.ask("\n[bold][?][/] Enter switch IP ")
 
     try:
         switch_connect = handle_connection(get_ip_address)
     except exceptions.NetmikoAuthenticationException:
-        print("[-] Invalid username or password.")
+        rich_console.print("[bold red][-][/] Invalid username or password.")
         return
     except exceptions.NetmikoTimeoutException:
-        print("[-] Connection timeout.")
+        rich_console.print("[bold red][-][/] Connection timeout.")
         return
 
     # print("Connected to {}\n".format(get_ip_address))
-    rich_console.print("[green]Connected to [bold]{}[/]".format(get_ip_address))
+    rich_console.print("[green bold][+][/] Connected to {}\n".format(get_ip_address))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
-    print("Switch uptime is: {}\n".format(switch_uptime))
-
+    
     all_stats = []
     unconnected_switchports = {}
-
 
     for interface in int_status:
         get_int_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
@@ -51,15 +51,14 @@ def main():
         stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
         all_stats.append(stats_total)
 
-
     # print("Not-connect switchports")
     # print("{:-<50}\n{:<10} {:<10} {:<10} {:<10}".format("-","Port", "Input", "Output", "Difference"))
 
     interface_percentages = []
 
-    rich_console.print("[bold underline]Nonconnect Switchports[/]\n")
+    rich_console.print("[bold]Nonconnect Switchports[/]")
 
-    table = Table(show_header=True, header_style="bold green")
+    table = Table(show_header=True, header_style="bold dark_goldenrod")
     table.add_column("Port")
     table.add_column("Input Packets")
     table.add_column("Output Packets")
@@ -87,10 +86,11 @@ def main():
         interface_percentages.append([make_percentage, dc_switchport])
     
     interface_percentages = sorted(interface_percentages, key=lambda x: x[0])
+    
     rich_console.print(table)
+    rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
 
-    print("{:-<50}\nInterface {int} has {usage}% the usage of the highest on the switch.".format(
-        "-",
+    rich_console.print("\nInterface [bold dark_goldenrod] {int} [/] has [bold dark_goldenrod] {usage}% [/] the usage of the highest on the switch.".format(
         int=interface_percentages[0][1],
         usage=interface_percentages[0][0]
     ))
