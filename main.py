@@ -72,6 +72,11 @@ def main():
         out_packets = unconnected_switchports[dc_switchport][1]
         make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
 
+        if make_percentage == 0:
+            percentage_string = "[green]{}[/]".format(str(make_percentage))
+        else:
+            percentage_string = str(make_percentage)
+
         # print("{:<10} {:<10} {:<10} {:<10}%".format(
         #     dc_switchport,
         #     in_packets,
@@ -83,7 +88,7 @@ def main():
             dc_switchport,
             in_packets,
             out_packets,
-            str(make_percentage),
+            percentage_string,
         )
 
         interface_percentages.append([make_percentage, dc_switchport])
@@ -93,7 +98,7 @@ def main():
     rich_console.print(table)
     rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
 
-    rich_console.print("\nInterface [bold dark_goldenrod] {int} [/] has [bold dark_goldenrod] {usage}% [/] the usage of the highest on the switch.".format(
+    rich_console.print("\nInterface [bold dark_goldenrod] {int} [/] has [bold dark_goldenrod] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
         usage=interface_percentages[0][0]
     ))
