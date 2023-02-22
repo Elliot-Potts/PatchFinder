@@ -32,6 +32,9 @@ def main():
     except exceptions.NetmikoTimeoutException:
         rich_console.print("[bold red][-][/] Connection timeout.")
         return
+    except ValueError:
+        rich_console.print("[bold red][-][/] No input provided.")
+        return
 
     # print("Connected to {}\n".format(get_ip_address))
     rich_console.print("[green bold][+][/] Connected to {}\n".format(get_ip_address))
