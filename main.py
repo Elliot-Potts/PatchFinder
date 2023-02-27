@@ -1,7 +1,6 @@
 """
 TODO
 - Add port descriptions, port VLAN, voice VLAN?
-- Add switch hostname
 - Add POE info, budget etc.
 
 - Build connection modules / remove hardcoding... make this more cohesive
@@ -24,9 +23,9 @@ def handle_connection(switch_ip):
 
 
 def main():
-    rich_console = Console(record=True)
+    rich_console = Console()
 
-    get_ip_address = Prompt.ask("\n[bold][?][/] Enter switch IP ")
+    get_ip_address = Prompt.ask("\n[bold][->][/bold] Enter switch IP ")
 
     try:
         switch_connect = handle_connection(get_ip_address)
@@ -40,8 +39,8 @@ def main():
         rich_console.print("[bold red][-][/] No input provided.")
         return
 
-    # print("Connected to {}\n".format(get_ip_address))
-    rich_console.print("[green bold][+][/] Connected to {}\n".format(get_ip_address))
+    switch_hostname = switch_connect.send_command("sh run | include hostname").split()[1]
+    rich_console.print("[bold green][+][/bold green] Connected to {ip} ( [italic]{hostn}[/] )\n".format(ip=get_ip_address, hostn=switch_hostname))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
     
