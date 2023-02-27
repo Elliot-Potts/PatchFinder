@@ -52,13 +52,14 @@ def main():
         get_int_stats = (get_int_stats['input_packets'], get_int_stats['output_packets'])
 
         if interface['status'] == "notconnect":
+            # NEED LOGIC HERE to add Port Description to the structure 
             unconnected_switchports[interface['port']] = get_int_stats
-
-        stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
-        all_stats.append(stats_total)
-
-    # print("Not-connect switchports")
-    # print("{:-<50}\n{:<10} {:<10} {:<10} {:<10}".format("-","Port", "Input", "Output", "Difference"))
+        
+        try:
+            stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
+            all_stats.append(stats_total)
+        except ValueError:
+            rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
 
     interface_percentages = []
 
@@ -69,6 +70,7 @@ def main():
     table.add_column("Input Packets")
     table.add_column("Output Packets")
     table.add_column("Difference (%)")
+    # table.add_column("Port Description") # 
 
     for dc_switchport in unconnected_switchports:
         in_packets = unconnected_switchports[dc_switchport][0]
@@ -79,13 +81,6 @@ def main():
             percentage_string = "[green]{}[/]".format(str(make_percentage))
         else:
             percentage_string = str(make_percentage)
-
-        # print("{:<10} {:<10} {:<10} {:<10}%".format(
-        #     dc_switchport,
-        #     in_packets,
-        #     out_packets,
-        #     make_percentage
-        # ))
 
         table.add_row(
             dc_switchport,
