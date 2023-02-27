@@ -1,6 +1,9 @@
 """
 TODO
-- Confirm reliability parsing stackable switches
+- Add port descriptions, port VLAN, voice VLAN?
+- Add switch hostname
+- Add POE info, budget etc.
+
 - Build connection modules / remove hardcoding... make this more cohesive
 -- Better port/stat data structure
 - Add username/password entry (remove environment var dependency)
