@@ -1,6 +1,7 @@
 """
 TODO
 - Add port descriptions, port VLAN, voice VLAN?
+- Add 'Last Input' field
 - Add POE info, budget etc.
 
 - Build connection modules / remove hardcoding... make this more cohesive
