@@ -27,7 +27,7 @@ def handle_connection(switch_ip):
 def main():
     rich_console = Console(highlight=False)
 
-    get_ip_address = Prompt.ask("\n[bold][->][/bold] Enter switch IP ")
+    get_ip_address = Prompt.ask("\n[bold][>][/bold] Enter switch IP ")
 
     try:
         switch_connect = handle_connection(get_ip_address)
@@ -42,7 +42,7 @@ def main():
         return
 
     switch_hostname = switch_connect.send_command("sh run | include hostname").split()[1]
-    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ( [italic]{hostn}[/] )\n".format(ip=get_ip_address, hostn=switch_hostname))
+    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=get_ip_address, hostn=switch_hostname))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
     
