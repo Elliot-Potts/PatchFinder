@@ -3,6 +3,7 @@ TODO
 - Add port descriptions, port VLAN, voice VLAN?
 - Add 'Last Input' field
 - Add POE info, budget etc.
+- Add multi IP input for checking multiple switches
 
 - Build connection modules / remove hardcoding... make this more cohesive
 -- Better port/stat data structure
@@ -55,7 +56,6 @@ def main():
         if interface['status'] == "notconnect":
             # NEED LOGIC HERE to add Port Description to the structure 
             unconnected_switchports[interface['port']] = get_int_stats
-        
         try:
             stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
             all_stats.append(stats_total)
@@ -71,12 +71,17 @@ def main():
     table.add_column("Input Packets")
     table.add_column("Output Packets")
     table.add_column("Difference (%)")
-    # table.add_column("Port Description") # 
+    # table.add_column("Port Description") #
 
     for dc_switchport in unconnected_switchports:
+        print(dc_switchport)
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
-        make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
+
+        try:
+            make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
+        except ValueError:
+            rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=dc_switchport))
 
         if make_percentage == 0:
             percentage_string = "[green]{}[/]".format(str(make_percentage))
