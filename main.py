@@ -4,8 +4,7 @@ TODO
 -- No TextFSM support, need to test reliability of #show power on stack switches
 
 - Build connection modules / remove hardcoding... make this more cohesive
--- Better port/stat data structure
-- Add username/password entry (remove environment var dependency)
+- Add username/password entry (system for selecting env or manual input)
 """
 
 from netmiko import ConnectHandler, exceptions
