@@ -1,9 +1,7 @@
 """
 TODO
-- Add port descriptions, port VLAN, voice VLAN?
-- Add 'Last Input' field
 - Add POE info, budget etc.
-- Add multi IP input for checking multiple switches
+-- No TextFSM support, need to test reliability of #show power on stack switches
 
 - Build connection modules / remove hardcoding... make this more cohesive
 -- Better port/stat data structure
@@ -21,7 +19,7 @@ import os
 
 def handle_connection(switch_ip):
     load_dotenv()
-    return ConnectHandler(host=switch_ip, username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
+    return ConnectHandler(host="192.168.1.2", username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
 
 
 def main():
@@ -44,6 +42,7 @@ def main():
     switch_hostname = switch_connect.send_command("sh run | include hostname").split()[1]
     rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=get_ip_address, hostn=switch_hostname))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
+    switch_power = switch_connect.send_command("sh power", use_textfsm=True).split()
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
     
     all_stats = []
@@ -51,13 +50,11 @@ def main():
 
     for interface in int_status:
         get_int_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
-        get_int_stats = (get_int_stats['input_packets'], get_int_stats['output_packets'])
 
         if interface['status'] == "notconnect":
-            # NEED LOGIC HERE to add Port Description to the structure 
-            unconnected_switchports[interface['port']] = get_int_stats
+            unconnected_switchports[interface['port']] = [get_int_stats["input_packets"], get_int_stats["output_packets"], interface['name'], interface['vlan'], get_int_stats['last_input']]
         try:
-            stats_total = int(get_int_stats[0]) + int(get_int_stats[1])
+            stats_total = int(get_int_stats['input_packets']) + int(get_int_stats['output_packets'])
             all_stats.append(stats_total)
         except ValueError:
             rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
@@ -67,16 +64,21 @@ def main():
     rich_console.print("[bold]Nonconnect Switchports[/]")
 
     table = Table(show_header=True, header_style="bold white")
-    table.add_column("Port")
+    table.add_column("Port")    
+    table.add_column("Port Description")
+    table.add_column("VLAN")
+    table.add_column("Last Input")
     table.add_column("Input Packets")
     table.add_column("Output Packets")
     table.add_column("Difference (%)")
-    # table.add_column("Port Description") #
 
     for dc_switchport in unconnected_switchports:
-        # print(dc_switchport)  # Debug
+        # Dict ?
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
+        port_desc = unconnected_switchports[dc_switchport][2]
+        port_vlan = unconnected_switchports[dc_switchport][3]
+        last_input = unconnected_switchports[dc_switchport][4]
 
         try:
             make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
@@ -90,9 +92,12 @@ def main():
 
         table.add_row(
             "[grey]{}[/]".format(dc_switchport),
+            "[grey19]{}[/]".format(port_desc),
+            "[grey19]{}[/]".format(port_vlan),
+            "[grey19]{}[/]".format(last_input),
             "[grey19]{}[/]".format(in_packets),
             "[grey19]{}[/]".format(out_packets),
-            percentage_string,
+            percentage_string
         )
 
         interface_percentages.append([make_percentage, dc_switchport])
@@ -101,6 +106,8 @@ def main():
     
     rich_console.print(table)
     rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
+
+    # print(switch_power)  # Test reliability of this array on STACK switches, could break
 
     rich_console.print("\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
