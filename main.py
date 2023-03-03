@@ -74,7 +74,7 @@ def main():
     # table.add_column("Port Description") #
 
     for dc_switchport in unconnected_switchports:
-        print(dc_switchport)
+        # print(dc_switchport)  # Debug
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
 
