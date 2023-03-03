@@ -20,4 +20,5 @@ The program also displays <strong>Port Description</strong>, <strong>VLAN</stron
 ## Dependencies
 
 - **Netmiko** <br>pip install netmiko==4.1.2
-- **python-dotenv** (for loading username/password via .env files)<br>pip install python-dotenv
+- **python-dotenv**<br>pip install python-dotenv
+- **Rich**<br>pip install rich
