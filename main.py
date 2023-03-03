@@ -25,7 +25,7 @@ def handle_connection(switch_ip):
 
 
 def main():
-    rich_console = Console()
+    rich_console = Console(highlight=False)
 
     get_ip_address = Prompt.ask("\n[bold][->][/bold] Enter switch IP ")
 
@@ -42,7 +42,7 @@ def main():
         return
 
     switch_hostname = switch_connect.send_command("sh run | include hostname").split()[1]
-    rich_console.print("[bold green][+][/bold green] Connected to {ip} ( [italic]{hostn}[/] )\n".format(ip=get_ip_address, hostn=switch_hostname))
+    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ( [italic]{hostn}[/] )\n".format(ip=get_ip_address, hostn=switch_hostname))
     switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
     int_status = switch_connect.send_command("sh int status", use_textfsm=True)
     
@@ -66,7 +66,7 @@ def main():
 
     rich_console.print("[bold]Nonconnect Switchports[/]")
 
-    table = Table(show_header=True, header_style="bold dark_goldenrod")
+    table = Table(show_header=True, header_style="bold white")
     table.add_column("Port")
     table.add_column("Input Packets")
     table.add_column("Output Packets")
@@ -89,9 +89,9 @@ def main():
             percentage_string = str(make_percentage)
 
         table.add_row(
-            dc_switchport,
-            in_packets,
-            out_packets,
+            "[grey]{}[/]".format(dc_switchport),
+            "[grey19]{}[/]".format(in_packets),
+            "[grey19]{}[/]".format(out_packets),
             percentage_string,
         )
 
@@ -102,7 +102,7 @@ def main():
     rich_console.print(table)
     rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
 
-    rich_console.print("\nInterface [bold dark_goldenrod] {int} [/] has [bold dark_goldenrod] {usage}% [/] the usage of the highest on the switch.\n".format(
+    rich_console.print("\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
         usage=interface_percentages[0][0]
     ))
