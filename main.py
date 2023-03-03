@@ -19,7 +19,7 @@ import os
 
 def handle_connection(switch_ip):
     load_dotenv()
-    return ConnectHandler(host="192.168.1.2", username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
+    return ConnectHandler(host=switch_ip, username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
 
 
 def main():
