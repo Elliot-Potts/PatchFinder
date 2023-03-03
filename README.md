@@ -12,7 +12,7 @@ The program will output all non-connected switchports, as well as their percenta
     2. Calculate & store <i>input_packets + output_packets<sup> [1]</sup></i>
     3. Store all nonconnect interfaces
 3. **Iterate all nonconnect interfaces**
-    1. Display *interface, input_packets, output_packets* and the result of
+    1. Display *interface, input_packets, output_packets* and the result of<br>
 <i>(input_packets + output_packets / maximum<sup> [1]</sup>) * 100</i>
 
 The program also displays <strong>Port Description</strong>, <strong>VLAN</strong> and <strong>Last Input</strong>.
