@@ -2,9 +2,7 @@
 TODO
 - Add POE info, budget etc.
 -- No TextFSM support, need to test reliability of #show power on stack switches
-
-- Build connection modules / remove hardcoding... make this more cohesive
-- Add username/password entry (system for selecting env or manual input)
+- Remove duplicate ValueError handling for management interfaces
 """
 
 from netmiko import ConnectHandler, exceptions
@@ -13,42 +11,60 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.table import Table
+import sys
 import os
 
+rich_console = Console(highlight=False)
+switches = {}
 
-def handle_connection(switch_ip):
+
+def auth_handler(ip_addresses):
     load_dotenv()
-    return ConnectHandler(host=switch_ip, username=os.environ.get("S_USERNAME"), password=os.environ.get("S_PASSWORD"), device_type="cisco_ios")
+    rich_console.print("[grey19 italic]\nLeave empty to use environment variables")
+
+    for address in ip_addresses:
+        rich_console.print(f"[bold]{address}")
+        get_username = Prompt.ask("[bold][>][/bold] Enter SSH username ")
+
+        if get_username:
+            get_password = Prompt.ask("[bold][>][/bold] Enter SSH password ", password=True)
+            switches[address] = [get_username, get_password]
+            rich_console.print(f"[bold green][+][/] Switch {address} added with username '{get_username}'")
+        else:
+            environment_username = os.environ.get("S_USERNAME")
+            environment_password = os.environ.get("S_PASSWORD")
+            switches[address] = [environment_username, environment_password]
+            rich_console.print(f"[bold green][+][/] Switch {address} added with environment username '{environment_username}'")
+
+        rich_console.print("\n")
 
 
-def main():
-    rich_console = Console(highlight=False)
-
-    get_ip_address = Prompt.ask("\n[bold][>][/bold] Enter switch IP ")
-
+def main(ip_address):
     try:
-        switch_connect = handle_connection(get_ip_address)
+        switch_connection = ConnectHandler(
+            host=ip_address,
+            username=switches[ip_address][0],
+            password=switches[ip_address][1],
+            device_type="cisco_ios"
+        )
     except exceptions.NetmikoAuthenticationException:
-        rich_console.print("[bold red][-][/] Invalid username or password.")
+        rich_console.print(f"[bold red][-][/] Invalid username or password ({ip_address}).")
         return
     except exceptions.NetmikoTimeoutException:
-        rich_console.print("[bold red][-][/] Connection timeout.")
-        return
-    except ValueError:
-        rich_console.print("[bold red][-][/] No input provided.")
+        rich_console.print(f"[bold red][-][/] Connection timeout ({ip_address}).")
         return
 
-    switch_hostname = switch_connect.send_command("sh run | include hostname").split()[1]
-    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=get_ip_address, hostn=switch_hostname))
-    switch_uptime = switch_connect.send_command("sh version", use_textfsm=True)[0]['uptime']
-    switch_power = switch_connect.send_command("sh power", use_textfsm=True).split()
-    int_status = switch_connect.send_command("sh int status", use_textfsm=True)
+    switch_hostname = switch_connection.send_command("sh run | include hostname").split()[1]
+    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=ip_address, hostn=switch_hostname))
+    switch_uptime = switch_connection.send_command("sh version", use_textfsm=True)[0]['uptime']
+    switch_power = switch_connection.send_command("sh power", use_textfsm=True).split()
+    int_status = switch_connection.send_command("sh int status", use_textfsm=True)
     
     all_stats = []
     unconnected_switchports = {}
 
     for interface in int_status:
-        get_int_stats = switch_connect.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
+        get_int_stats = switch_connection.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
 
         if interface['status'] == "notconnect":
             unconnected_switchports[interface['port']] = [get_int_stats["input_packets"], get_int_stats["output_packets"], interface['name'], interface['vlan'], get_int_stats['last_input']]
@@ -56,6 +72,7 @@ def main():
             stats_total = int(get_int_stats['input_packets']) + int(get_int_stats['output_packets'])
             all_stats.append(stats_total)
         except ValueError:
+            # TODO Remove duplicate ValueError exception, need to test on a 2960x management port
             rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
 
     interface_percentages = []
@@ -90,12 +107,12 @@ def main():
             percentage_string = str(make_percentage)
 
         table.add_row(
-            "[grey]{}[/]".format(dc_switchport),
-            "[grey19]{}[/]".format(port_desc),
-            "[grey19]{}[/]".format(port_vlan),
-            "[grey19]{}[/]".format(last_input),
-            "[grey19]{}[/]".format(in_packets),
-            "[grey19]{}[/]".format(out_packets),
+            f"[grey]{dc_switchport}[/]",
+            f"[grey19]{port_desc}[/]",
+            f"[grey19]{port_vlan}[/]",
+            f"[grey19]{last_input}[/]",
+            f"[grey19]{in_packets}[/]",
+            f"[grey19]{out_packets}[/]",
             percentage_string
         )
 
@@ -106,7 +123,7 @@ def main():
     rich_console.print(table)
     rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
 
-    # print(switch_power)  # Test reliability of this array on STACK switches, could break
+    # print(switch_power)  # TODO Test reliability of this array on STACK switches, could break, if not .split()[-1]
 
     rich_console.print("\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
@@ -116,7 +133,18 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        rich_console.print("[grey19 italic]You can enter multiple IPs seperated by a space")
+        get_ip_address = Prompt.ask("[bold][>][/bold] Enter switch IP(s) ").split()
+
+        if get_ip_address:
+            auth_handler(get_ip_address)
+
+            for address in switches:
+                Prompt.ask(f"[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
+                main(address)
+        else:
+            rich_console.print("[bold red][-][/] No input provided.")
+            sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n[!] Exiting via keyboard input.")
 
