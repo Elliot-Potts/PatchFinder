@@ -129,7 +129,7 @@ def main(ip_address):
 
     interface_percentages = []
 
-    rich_console.print("[bold]Nonconnect Switchports[/]")
+    rich_console.print("[bold]Not-connect Switchports[/]")
 
     table = Table(show_header=True, header_style="bold white")
     table.add_column("Port")    
