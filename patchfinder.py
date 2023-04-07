@@ -2,6 +2,7 @@
 TODO
 - Remove duplicate ValueError handling for management interfaces
 - Test this program against Cisco 9200L switches
+- b64 on env values?
 """
 
 from netmiko import ConnectHandler, exceptions
@@ -10,15 +11,31 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.table import Table
+import argparse
 import sys
 import os
 
 rich_console = Console(highlight=False)
+
+arg_parser = argparse.ArgumentParser(description="Switch connection details")
+arg_parser.add_argument('-i', '--ip', help="IP address of the Cisco switch")
+arg_parser.add_argument('-u', "--username", help="Username (leave empty to use .env)")
+arg_parser.add_argument('-p', '--password', help="Password (leave empty to use .env)")
+cli_args = arg_parser.parse_args()
+
 switches = {}
 
 
+def confirm_environment():
+    if os.environ.get("PF_USERNAME") and os.environ.get("PF_PASSWORD"):
+        return True
+    else:
+        # Should add some logic here for returning to manual auth handler if no .env found ?
+        rich_console.print(f"[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
+        sys.exit(1)
+
+
 def auth_handler(ip_addresses):
-    load_dotenv()
     rich_console.print("[grey19 italic]\nLeave empty to use environment variables")
 
     for address in ip_addresses:
@@ -30,31 +47,16 @@ def auth_handler(ip_addresses):
             switches[address] = [get_username, get_password]
             rich_console.print(f"[bold green][+][/] Switch {address} added with username '{get_username}'")
         else:
-            environment_username = os.environ.get("S_USERNAME")
-            environment_password = os.environ.get("S_PASSWORD")
-            switches[address] = [environment_username, environment_password]
-            rich_console.print(f"[bold green][+][/] Switch {address} added with environment username '{environment_username}'")
+            if confirm_environment():
+                environment_username = os.environ.get("PF_USERNAME")
+                environment_password = os.environ.get("PF_PASSWORD")
+                switches[address] = [environment_username, environment_password]
+                rich_console.print(f"[bold green][+][/] Switch {address} added with environment username '{environment_username}'")
 
         rich_console.print("\n")
 
 
 def main(ip_address):
-    test_power_2960 = """Module   Available     Used     Remaining
-          (Watts)     (Watts)    (Watts)
-------   ---------   --------   ---------
-1           740.0      404.0       336.0
-2           740.0       45.8       694.2
-3             n/a        n/a         n/a
-4             n/a        n/a         n/a
-5           740.0      120.8       619.2
-Interface Admin  Oper       Power   Device              Class Max
-                            (Watts)
---------- ------ ---------- ------- ------------------- ----- ----
-Gi1/0/1   auto   on         30.0    AIR-AP3802I-E-K9    4     30.0
-Gi1/0/2   auto   on         30.0    AIR-AP3802I-E-K9    4     30.0
-Gi1/0/3   auto   on         30.0    AIR-AP3802I-E-K9    4     30.0
-"""  # Power inline parsing debug
-
     try:
         switch_connection = ConnectHandler(
             host=ip_address,
@@ -73,7 +75,6 @@ Gi1/0/3   auto   on         30.0    AIR-AP3802I-E-K9    4  �
     rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=ip_address, hostn=switch_hostname))
     switch_uptime = switch_connection.send_command("sh version", use_textfsm=True)[0]['uptime']
     switch_power = switch_connection.send_command("sh power inline", use_textfsm=True).replace("-", "").split()
-    # switch_power = test_power_2960.replace("-", "").split()  # Power inline parsing debug
     int_status = switch_connection.send_command("sh int status", use_textfsm=True)
 
     switch_power_parsed = []
@@ -186,19 +187,37 @@ Gi1/0/3   auto   on         30.0    AIR-AP3802I-E-K9    4  �
 
 
 if __name__ == "__main__":
+    load_dotenv()
+
     try:
-        rich_console.print("[grey19 italic]You can enter multiple IPs seperated by a space")
-        get_ip_address = Prompt.ask("[bold][>][/bold] Enter switch IP(s) ").split()
+        if cli_args.ip and cli_args.username and cli_args.password:
+            switches[cli_args.ip] = [cli_args.username, cli_args.password]
+            main(cli_args.ip)
 
-        if get_ip_address:
-            auth_handler(get_ip_address)
+        if cli_args.ip:
+            if cli_args.username and cli_args.password:
+                switches[cli_args.ip] = [cli_args.username, cli_args.password]
+            else:
+                if confirm_environment():
+                    environment_username = os.environ.get("PF_USERNAME")
+                    environment_password = os.environ.get("PF_PASSWORD")
+                    switches[cli_args.ip] = [environment_username, environment_password]
+                    rich_console.print(f"[bold green][+][/] Using environment variable username '{environment_username}'")
 
-            for address in switches:
-                Prompt.ask(f"[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
-                main(address)
+            main(cli_args.ip)
         else:
-            rich_console.print("[bold red][-][/] No input provided.")
-            sys.exit(1)
+            rich_console.print("[grey19 italic]You can enter multiple IPs seperated by a space")
+            get_ip_address = Prompt.ask("[bold][>][/bold] Enter switch IP(s) ").split()
+
+            if get_ip_address:
+                auth_handler(get_ip_address)
+
+                for address in switches:
+                    Prompt.ask(f"[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
+                    main(address)
+            else:
+                rich_console.print("[bold red][-][/] No input provided.")
+                sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n[!] Exiting via keyboard input.")
 
