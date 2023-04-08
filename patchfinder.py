@@ -3,6 +3,7 @@ TODO
 - Remove duplicate ValueError handling for management interfaces
 - Test this program against Cisco 9200L switches
 - b64 on env values?
+- Add TXT exporting?
 """
 
 from netmiko import ConnectHandler, exceptions
@@ -219,5 +220,5 @@ if __name__ == "__main__":
                 rich_console.print("[bold red][-][/] No input provided.")
                 sys.exit(1)
     except KeyboardInterrupt:
-        print("\n\n[!] Exiting via keyboard input.")
+        rich_console.print("\n\n[bold red][!][/] Exiting via keyboard input.")
 
