@@ -1,6 +1,6 @@
 # Patch Finder
 
-A quick tool for identifying available/least used switchports on Cisco IOS.
+A tool for identifying available/least used switchports on Cisco IOS switches.
 
 The program will output relevant information on all non-connected switchports, as well as their percentage usage relative to the top-talker.
 
@@ -13,17 +13,19 @@ The program will output relevant information on all non-connected switchports, a
     2. Calculate & store <i>input_packets + output_packets<sup> [1]</sup></i>
     3. Store all not-connect interfaces
 3. **Iterate all not-connect interfaces**
-    1. Display *interface, description, VLAN, last input, input packets, output packets* and the result of<br><i>(input_packets + output_packets / maximum<sup> [1]</sup>) * 100</i>
+    1. Display *interface, description, VLAN, last input, input packets, output packets* and the percentage use (result of<br><i>(input_packets + output_packets / maximum<sup> [1]</sup>) * 100</i>)
+
+Additional information such as **Hostname**, **PoE details** and **System uptime** is also outputted.
 
 ## CLI Arguments
 
 Optional command line arguments can be provided for faster use.
 
-usage: patchfinder.py [-h] [-i IP] [-u USERNAME] [-p PASSWORD]
+Usage: patchfinder.py [-h] [-i IP] [-u USERNAME] [-p PASSWORD]
 
 <b>-h, --help</b> 
 Show the help message      
-<b>-i IP, --ip IP IP</b>
+<b>-i IP, --ip IP</b>
 Address of the Cisco switch        
 <b>-u USERNAME, --username USERNAME</b>
 (leave empty to use environment PF_USERNAME)    
@@ -32,6 +34,8 @@ Address of the Cisco switch
 
 ## Dependencies
 
-- **Netmiko** <br>pip install netmiko==4.1.2
+Built with Python 3 using:
+
+- **Netmiko** <br>pip install netmiko
 - **python-dotenv**<br>pip install python-dotenv
 - **Rich**<br>pip install rich

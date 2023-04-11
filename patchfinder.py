@@ -130,7 +130,9 @@ def main(ip_address):
 
     interface_percentages = []
 
-    rich_console.print("[bold]Not-connect Switchports[/]")
+    rich_console.print("[bold]Switch uptime:[/bold] {}".format(switch_uptime))
+
+    rich_console.print("\n[bold]Not-connect Switchports[/]")
 
     table = Table(show_header=True, header_style="bold white")
     table.add_column("Port")    
@@ -176,10 +178,8 @@ def main(ip_address):
     rich_console.print(table)
 
     if len(switch_power_parsed) > 0:
-        rich_console.print("[bold]PoE Details[/]")
+        rich_console.print("\n[bold]PoE Details[/]")
         rich_console.print(poe_table)
-
-    rich_console.print(Panel.fit("Switch uptime is: [bold]{}[/]".format(switch_uptime)))
 
     rich_console.print("\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
