@@ -2,8 +2,6 @@
 TODO
 - Remove duplicate ValueError handling for management interfaces
 - Test this program against Cisco 9200L switches
-- b64 on env values?
-- Add TXT exporting?
 """
 
 from netmiko import ConnectHandler, exceptions
@@ -31,7 +29,7 @@ def confirm_environment():
     if os.environ.get("PF_USERNAME") and os.environ.get("PF_PASSWORD"):
         return True
     else:
-        # Should add some logic here for returning to manual auth handler if no .env found ?
+        # TODO Should add some logic here for returning to manual auth handler if no .env found ?
         rich_console.print(f"[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
         sys.exit(1)
 
@@ -54,7 +52,26 @@ def auth_handler(ip_addresses):
                 switches[address] = [environment_username, environment_password]
                 rich_console.print(f"[bold green][+][/] Switch {address} added with environment username '{environment_username}'")
 
-        rich_console.print("\n")
+
+def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
+    """Builds a TXT file summary with relevant information"""
+    export_filename = f"{hostname}.txt"
+    
+    with open(export_filename, "wt") as export_file:
+        export_console = Console(file=export_file)
+        export_console.print("-" * 103)
+        export_console.print(f"[underline]PATCHFINDER.PY RESULTS on hostname {hostname}[/underline]")
+        export_console.print("-" * 103)  # underline not supported to file
+        export_console.print(f"Switch IP: {ip}")
+        export_console.print(f"Switch hostname: {hostname}")
+        export_console.print(f"Switch uptime: {uptime}\n")
+        export_console.print("Not-connect Interfaces")
+        export_console.print(interfaces)
+        export_console.print("\nPoE Details")
+        export_console.print(poe)
+        export_console.print(f"\nLowest used interface: {lowest_int}")
+    
+    rich_console.print(f"[bold][green][+][/green][/bold] Summary exported to [bold]{export_filename}[/bold]")
 
 
 def main(ip_address):
@@ -144,7 +161,6 @@ def main(ip_address):
     table.add_column("Percentage Use (%)")
 
     for dc_switchport in unconnected_switchports:
-        # Dict ?
         in_packets = unconnected_switchports[dc_switchport][0]
         out_packets = unconnected_switchports[dc_switchport][1]
         port_desc = unconnected_switchports[dc_switchport][2]
@@ -181,10 +197,26 @@ def main(ip_address):
         rich_console.print("\n[bold]PoE Details[/]")
         rich_console.print(poe_table)
 
-    rich_console.print("\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
+    lowest_interface = "\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
         int=interface_percentages[0][1],
         usage=interface_percentages[0][0]
-    ))
+    )
+
+    rich_console.print(lowest_interface)
+
+    export_question = Prompt.ask(f"[bold][?][/bold] Would you like to export a text file summary for {switch_hostname}?", choices=['y', 'n'])
+
+    if export_question == "y":
+        text_exporter(
+            ip_address,
+            switch_hostname,
+            switch_uptime,
+            table,
+            poe_table,
+            lowest_interface
+        )
+    else:
+        rich_console.print("[bold]Exiting without text file export.[/]")
 
 
 if __name__ == "__main__":
@@ -214,11 +246,11 @@ if __name__ == "__main__":
                 auth_handler(get_ip_address)
 
                 for address in switches:
-                    Prompt.ask(f"[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
+                    Prompt.ask(f"\n[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
                     main(address)
             else:
                 rich_console.print("[bold red][-][/] No input provided.")
-                sys.exit(1)
+                sys.exit(1)        
     except KeyboardInterrupt:
         rich_console.print("\n\n[bold red][!][/] Exiting via keyboard input.")
 
