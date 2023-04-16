@@ -226,9 +226,8 @@ if __name__ == "__main__":
         if cli_args.ip and cli_args.username and cli_args.password:
             switches[cli_args.ip] = [cli_args.username, cli_args.password]
             main(cli_args.ip)
-
-        if cli_args.ip:
-            if cli_args.username and cli_args.password:
+        elif cli_args.ip:
+            if cli_args.username and cli_args.password: # obsolete? 
                 switches[cli_args.ip] = [cli_args.username, cli_args.password]
             else:
                 if confirm_environment():
