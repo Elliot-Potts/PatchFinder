@@ -4,15 +4,20 @@ TODO
 - Test this program against Cisco 9200L switches
 """
 
-from netmiko import ConnectHandler, exceptions
-from dotenv import load_dotenv
-from rich.console import Console
-from rich.prompt import Prompt
-from rich.panel import Panel
-from rich.table import Table
 import argparse
 import sys
 import os
+
+try:
+    from netmiko import ConnectHandler, exceptions
+    from dotenv import load_dotenv
+    from rich.console import Console
+    from rich.prompt import Prompt
+    from rich.panel import Panel
+    from rich.table import Table
+except ModuleNotFoundError:
+    print("[-] You do not have the dependencies installed (Netmiko, python-dotenv, Rich)")
+    sys.exit(1)
 
 rich_console = Console(highlight=False)
 
