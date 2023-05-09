@@ -1,9 +1,6 @@
-"""
-TODO
-- Remove duplicate ValueError handling for management interfaces
-- Test this program against Cisco 9200L switches
-- Fix colour issue on '[ENTER] connect' message
-"""
+# A command-line utility for finding unused switchports
+# https://github.com/Elliot-Potts/PatchFinder
+
 
 import argparse
 import sys
@@ -19,6 +16,7 @@ try:
 except ModuleNotFoundError:
     print("[-] You do not have the dependencies installed (Netmiko, python-dotenv, Rich)")
     sys.exit(1)
+
 
 rich_console = Console(highlight=False)
 
@@ -41,7 +39,8 @@ def confirm_environment():
 
 
 def auth_handler(ip_addresses):
-    rich_console.print("[grey19 italic]\nLeave empty to use environment variables")
+    """Handles the credential input/storage for each switch"""
+    rich_console.print("[grey54 italic]\nLeave empty to use environment variables")
 
     for address in ip_addresses:
         rich_console.print(f"[bold]{address}")
@@ -149,7 +148,8 @@ def main(ip_address):
             all_stats.append(stats_total)
         except ValueError:
             # TODO Remove duplicate ValueError exception, need to test on a 2960x management port
-            rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
+            # rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
+            pass
 
     interface_percentages = []
 
@@ -176,7 +176,7 @@ def main(ip_address):
         try:
             make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
         except ValueError:
-            rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=dc_switchport))
+            rich_console.print("\n[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=dc_switchport))
 
         if make_percentage == 0:
             percentage_string = "[green]{}[/]".format(str(make_percentage))
@@ -185,11 +185,11 @@ def main(ip_address):
 
         table.add_row(
             f"[grey]{dc_switchport}[/]",
-            f"[grey19]{port_desc}[/]",
-            f"[grey19]{port_vlan}[/]",
-            f"[grey19]{last_input}[/]",
-            f"[grey19]{in_packets}[/]",
-            f"[grey19]{out_packets}[/]",
+            f"[grey54]{port_desc}[/]",
+            f"[grey54]{port_vlan}[/]",
+            f"[grey54]{last_input}[/]",
+            f"[grey54]{in_packets}[/]",
+            f"[grey54]{out_packets}[/]",
             percentage_string
         )
 
@@ -244,14 +244,14 @@ if __name__ == "__main__":
 
             main(cli_args.ip)
         else:
-            rich_console.print("[grey19 italic]You can enter multiple IPs seperated by a space")
+            rich_console.print("[grey54 italic]You can enter multiple IPs seperated by a space")
             get_ip_address = Prompt.ask("[bold][>][/bold] Enter switch IP(s) ").split()
 
             if get_ip_address:
                 auth_handler(get_ip_address)
 
                 for address in switches:
-                    Prompt.ask(f"\n[grey19]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
+                    Prompt.ask(f"\n[grey54]Press [bold][ENTER][/] to connect to [bold]{address}[/]")                
                     main(address)
             else:
                 rich_console.print("[bold red][-][/] No input provided.")
