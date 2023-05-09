@@ -2,6 +2,7 @@
 TODO
 - Remove duplicate ValueError handling for management interfaces
 - Test this program against Cisco 9200L switches
+- Fix colour issue on '[ENTER] connect' message
 """
 
 import argparse
