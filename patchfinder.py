@@ -30,10 +30,10 @@ switches = {}
 
 
 def confirm_environment():
+    """Confirms environment variables are set when necessary"""
     if os.environ.get("PF_USERNAME") and os.environ.get("PF_PASSWORD"):
         return True
     else:
-        # TODO Should add some logic here for returning to manual auth handler if no .env found ?
         rich_console.print(f"[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
         sys.exit(1)
 
