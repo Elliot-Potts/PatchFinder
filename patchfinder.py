@@ -74,7 +74,7 @@ def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
         export_console.print(interfaces)
         export_console.print("\nPoE Details")
         export_console.print(poe)
-        export_console.print(f"\Least-used interface: {lowest_int}")
+        export_console.print(f"\nLeast-used interface: {lowest_int}")
     
     rich_console.print(f"[bold][green][+][/green][/bold] Summary exported to [bold]{export_filename}[/bold]")
 
