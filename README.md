@@ -7,7 +7,6 @@ The program will output relevant information on all non-connected switchports, a
 ## How it works
 
 1. **Connect to the switch with Netmiko**
-    1. Optionally, the Netmiko connection can use two environment variables: <i>PF_USERNAME</i> and <i>PF_PASSWORD</i> 
 2. **Iterate all interfaces**
     1. Fetch individual interface information
     2. Calculate & store <i>input_packets + output_packets<sup> [1]</sup></i>
