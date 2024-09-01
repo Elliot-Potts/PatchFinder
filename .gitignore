@@ -1,6 +1,8 @@
 
 .env
 
+patchfinder_gui.py
+
 switch_stack_power.txt
 
 docs/
