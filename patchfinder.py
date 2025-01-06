@@ -136,13 +136,19 @@ def main(ip_address):
             )
     
     all_stats = []
-    unconnected_switchports = {}
+    disconnected_switchports = {}
 
     for interface in int_status:
         get_int_stats = switch_connection.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
 
         if interface['status'] == "notconnect":
-            unconnected_switchports[interface['port']] = [get_int_stats["input_packets"], get_int_stats["output_packets"], interface['name'], interface['vlan'], get_int_stats['last_input']]
+            # Handle 'vlan' vs 'vlan_id' caveat via TextFSM
+            get_vlan = interface.get('vlan') or interface.get('vlan_id')
+            disconnected_switchports[interface['port']] = [get_int_stats["input_packets"], 
+                                                           get_int_stats["output_packets"], 
+                                                           interface['name'], 
+                                                           get_vlan, 
+                                                           get_int_stats['last_input']]
         try:
             stats_total = int(get_int_stats['input_packets']) + int(get_int_stats['output_packets'])
             all_stats.append(stats_total)
@@ -166,12 +172,12 @@ def main(ip_address):
     table.add_column("Output Packets")
     table.add_column("Percentage Use (%)")
 
-    for dc_switchport in unconnected_switchports:
-        in_packets = unconnected_switchports[dc_switchport][0]
-        out_packets = unconnected_switchports[dc_switchport][1]
-        port_desc = unconnected_switchports[dc_switchport][2]
-        port_vlan = unconnected_switchports[dc_switchport][3]
-        last_input = unconnected_switchports[dc_switchport][4]
+    for dc_switchport in disconnected_switchports:
+        in_packets = disconnected_switchports[dc_switchport][0]
+        out_packets = disconnected_switchports[dc_switchport][1]
+        port_desc = disconnected_switchports[dc_switchport][2]
+        port_vlan = disconnected_switchports[dc_switchport][3]
+        last_input = disconnected_switchports[dc_switchport][4]
 
         try:
             make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
