@@ -11,7 +11,6 @@ try:
     from dotenv import load_dotenv
     from rich.console import Console
     from rich.prompt import Prompt
-    from rich.panel import Panel
     from rich.table import Table
 except ModuleNotFoundError:
     print("[-] You do not have the dependencies installed (Netmiko, python-dotenv, Rich)")
@@ -34,7 +33,7 @@ def confirm_environment():
     if os.environ.get("PF_USERNAME") and os.environ.get("PF_PASSWORD"):
         return True
     else:
-        rich_console.print(f"[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
+        rich_console.print("[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
         sys.exit(1)
 
 
@@ -42,27 +41,27 @@ def auth_handler(ip_addresses):
     """Handles the credential input/storage for each switch"""
     rich_console.print("[grey54 italic]\nLeave empty to use environment variables")
 
-    for address in ip_addresses:
-        rich_console.print(f"[bold]{address}")
+    for ip in ip_addresses:
+        rich_console.print(f"[bold]{ip}")
         get_username = Prompt.ask("[bold][>][/bold] Enter SSH username ")
 
         if get_username:
             get_password = Prompt.ask("[bold][>][/bold] Enter SSH password ", password=True)
-            switches[address] = [get_username, get_password]
-            rich_console.print(f"[bold green][+][/] Switch {address} added with username '{get_username}'")
+            switches[ip] = [get_username, get_password]
+            rich_console.print(f"[bold green][+][/] Switch {ip} added with username '{get_username}'")
         else:
             if confirm_environment():
                 environment_username = os.environ.get("PF_USERNAME")
                 environment_password = os.environ.get("PF_PASSWORD")
-                switches[address] = [environment_username, environment_password]
-                rich_console.print(f"[bold green][+][/] Switch {address} added with environment username '{environment_username}'")
+                switches[ip] = [environment_username, environment_password]
+                rich_console.print(f"[bold green][+][/] Switch {ip} added with environment username '{environment_username}'")
 
 
 def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
     """Builds a TXT file summary with relevant information"""
     export_filename = f"{hostname}.txt"
     
-    with open(export_filename, "wt") as export_file:
+    with open(export_filename, "wt", encoding="utf-8") as export_file:
         export_console = Console(file=export_file)
         export_console.print("-" * 103)
         export_console.print(f"[underline]PATCHFINDER.PY RESULTS on hostname {hostname}[/underline]")
@@ -80,6 +79,7 @@ def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
 
 
 def main(ip_address):
+    """Main function for connecting to a switch and gathering information"""
     try:
         switch_connection = ConnectHandler(
             host=ip_address,
@@ -95,7 +95,7 @@ def main(ip_address):
         return
 
     switch_hostname = switch_connection.send_command("sh run | include hostname").split()[1]
-    rich_console.print("[bold green][+][/bold green] Connected to {ip}  ([italic green]{hostn}[/])\n".format(ip=ip_address, hostn=switch_hostname))
+    rich_console.print(f"[bold green][+][/bold green] Connected to {ip_address}  ([italic green]{switch_hostname}[/])\n")
     switch_uptime = switch_connection.send_command("sh version", use_textfsm=True)[0]['uptime']
     switch_power = switch_connection.send_command("sh power inline", use_textfsm=True).replace("-", "").split()
     int_status = switch_connection.send_command("sh int status", use_textfsm=True)
@@ -153,14 +153,12 @@ def main(ip_address):
             stats_total = int(get_int_stats['input_packets']) + int(get_int_stats['output_packets'])
             all_stats.append(stats_total)
         except ValueError:
-            # TODO Remove duplicate ValueError exception, need to test on a 2960x management port
-            # rich_console.print("[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=interface['port']))
+            # rich_console.print(f"[bold red][-][/bold red] Unable to calculate stats for interface [red]{interface['port']}[/red]. Likely a manegement interface...\n")
             pass
 
     interface_percentages = []
 
-    rich_console.print("[bold]Switch uptime:[/bold] {}".format(switch_uptime))
-
+    rich_console.print(f"[bold]Switch uptime:[/bold] {switch_uptime}")
     rich_console.print("\n[bold]Not-connect Switchports[/]")
 
     table = Table(show_header=True, header_style="bold white")
