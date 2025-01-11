@@ -31,9 +31,9 @@ def confirm_environment():
     """Confirms environment variables are set when necessary"""
     if os.environ.get("PF_USERNAME") and os.environ.get("PF_PASSWORD"):
         return True
-    else:
-        rich_console.print("[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
-        sys.exit(1)
+
+    rich_console.print("[bold red][-][/] Authentication environment variables not found [italic](PF_USERNAME, PF_PASSWORD)[/italic].")
+    sys.exit(1)
 
 
 def auth_handler(ip_addresses):
@@ -50,16 +50,16 @@ def auth_handler(ip_addresses):
             rich_console.print(f"[bold green][+][/] Switch {ip} added with username '{get_username}'")
         else:
             if confirm_environment():
-                environment_username = os.environ.get("PF_USERNAME")
-                environment_password = os.environ.get("PF_PASSWORD")
-                switches[ip] = [environment_username, environment_password]
-                rich_console.print(f"[bold green][+][/] Switch {ip} added with environment username '{environment_username}'")
+                env_username = os.environ.get("PF_USERNAME")
+                env_password = os.environ.get("PF_PASSWORD")
+                switches[ip] = [env_username, env_password]
+                rich_console.print(f"[bold green][+][/] Switch {ip} added with environment username '{env_username}'")
 
 
 def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
     """Builds a TXT file summary with relevant information"""
     export_filename = f"{hostname}.txt"
-    
+
     with open(export_filename, "wt", encoding="utf-8") as export_file:
         export_console = Console(file=export_file)
         export_console.print("-" * 103)
@@ -73,7 +73,7 @@ def text_exporter(ip, hostname, uptime, interfaces, poe, lowest_int):
         export_console.print("\nPoE Details")
         export_console.print(poe)
         export_console.print(f"\nLeast-used interface: {lowest_int}")
-    
+
     rich_console.print(f"[bold][green][+][/green][/bold] Summary exported to [bold]{export_filename}[/bold]")
 
 
@@ -87,10 +87,10 @@ def main(ip_address):
             device_type="cisco_ios"
         )
     except exceptions.NetmikoAuthenticationException:
-        rich_console.print(f"[bold red][-][/] Invalid username or password ({ip_address}).")
+        rich_console.print(f"\n[bold red][-][/] Invalid username or password ({ip_address}).")
         return
     except exceptions.NetmikoTimeoutException:
-        rich_console.print(f"[bold red][-][/] Connection timeout ({ip_address}).")
+        rich_console.print(f"\n[bold red][-][/] Connection timeout ({ip_address}).")
         return
 
     switch_hostname = switch_connection.send_command("sh run | include hostname").split()[1]
@@ -104,7 +104,7 @@ def main(ip_address):
     for item in range(7, switch_power.index("Interface")):
         if switch_power[item].isdigit():
             switch_power_parsed.append(switch_power[item:item+4])
-        
+
     if not switch_power_parsed:
         if switch_power[0].startswith("Available") and switch_power[1].startswith("Used") and switch_power[2].startswith("Remaining"):
             get_available = switch_power[0].split(":")[1].replace("(w)", "")
@@ -116,7 +116,7 @@ def main(ip_address):
 
     if len(switch_power_parsed) > 0:
         poe_table = Table(show_header=True, header_style="bold white")
-        poe_table.add_column("Switch No.")    
+        poe_table.add_column("Switch No.")
         poe_table.add_column("Available")
         poe_table.add_column("Used")
         poe_table.add_column("Free")
@@ -133,20 +133,20 @@ def main(ip_address):
                 switch[2],
                 poe_free
             )
-    
+
     all_stats = []
     disconnected_switchports = {}
 
     for interface in int_status:
-        get_int_stats = switch_connection.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
+        get_int_stats = switch_connection.send_command(f'show int {interface['port']}', use_textfsm=True)[0]
 
         if interface['status'] == "notconnect":
             # [get_vlan] Handle 'vlan' vs 'vlan_id' caveat via TextFSM
             get_vlan = interface.get('vlan') or interface.get('vlan_id')
-            disconnected_switchports[interface['port']] = [get_int_stats["input_packets"], 
-                                                           get_int_stats["output_packets"], 
-                                                           interface['name'], 
-                                                           get_vlan, 
+            disconnected_switchports[interface['port']] = [get_int_stats["input_packets"],
+                                                           get_int_stats["output_packets"],
+                                                           interface['name'],
+                                                           get_vlan,
                                                            get_int_stats['last_input']]
         try:
             stats_total = int(get_int_stats['input_packets']) + int(get_int_stats['output_packets'])
@@ -161,7 +161,7 @@ def main(ip_address):
     rich_console.print("\n[bold]Not-connect Switchports[/]")
 
     table = Table(show_header=True, header_style="bold white")
-    table.add_column("Port")    
+    table.add_column("Port")
     table.add_column("Port Description")
     table.add_column("VLAN")
     table.add_column("Last Input")
@@ -169,20 +169,20 @@ def main(ip_address):
     table.add_column("Output Packets")
     table.add_column("Percentage Use (%)")
 
-    for dc_switchport in disconnected_switchports:
-        in_packets = disconnected_switchports[dc_switchport][0]
-        out_packets = disconnected_switchports[dc_switchport][1]
-        port_desc = disconnected_switchports[dc_switchport][2]
-        port_vlan = disconnected_switchports[dc_switchport][3]
-        last_input = disconnected_switchports[dc_switchport][4]
+    for dc_switchport, values in disconnected_switchports.items():
+        in_packets = values[0]
+        out_packets = values[1]
+        port_desc = values[2]
+        port_vlan = values[3]
+        last_input = values[4]
 
         try:
             make_percentage = round(((int(in_packets)+int(out_packets)) / int(max(all_stats))) * 100, 2)
         except ValueError:
-            rich_console.print("\n[bold red][-][/bold red] Unable to calculate stats for interface [red]{int}[/red]. Likely a manegement interface...\n".format(int=dc_switchport))
+            rich_console.print(f"\n[bold red][-][/bold red] Unable to calculate stats for interface [red]{dc_switchport}[/red]. Likely a manegement interface...\n")
 
         if make_percentage == 0:
-            percentage_string = "[green]{}[/]".format(str(make_percentage))
+            percentage_string = f"[green]{make_percentage}[/]"
         else:
             percentage_string = str(make_percentage)
 
@@ -197,19 +197,16 @@ def main(ip_address):
         )
 
         interface_percentages.append([make_percentage, dc_switchport])
-    
+
     interface_percentages = sorted(interface_percentages, key=lambda x: x[0])
-    
+
     rich_console.print(table)
 
     if len(switch_power_parsed) > 0:
         rich_console.print("\n[bold]PoE Details[/]")
         rich_console.print(poe_table)
 
-    lowest_interface = "\nInterface [bold green] {int} [/] has [bold green] {usage}% [/] the usage of the highest on the switch.\n".format(
-        int=interface_percentages[0][1],
-        usage=interface_percentages[0][0]
-    )
+    lowest_interface = f"\nInterface [bold green] {interface_percentages[0][1]} [/] has [bold green] {interface_percentages[0][0]}% [/] the usage of the highest on the switch.\n"
 
     rich_console.print(lowest_interface)
 
@@ -236,6 +233,7 @@ if __name__ == "__main__":
             switches[cli_args.ip] = [cli_args.username, cli_args.password]
             main(cli_args.ip)
         elif cli_args.ip:
+            # TODO - Remove the username and password check, direct to manual input
             if cli_args.username and cli_args.password: # obsolete? 
                 switches[cli_args.ip] = [cli_args.username, cli_args.password]
             else:
@@ -261,4 +259,3 @@ if __name__ == "__main__":
                 sys.exit(1)        
     except KeyboardInterrupt:
         rich_console.print("\n\n[bold red][!][/] Exiting via keyboard input.")
-
