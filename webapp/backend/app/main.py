@@ -1,8 +1,8 @@
 """Main module for the FastAPI application."""
 
+from netmiko import exceptions
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from netmiko import exceptions
 from .models import SwitchConnection, SwitchResponse
 from .session_manager import SessionManager
 
@@ -20,6 +20,7 @@ app.add_middleware(
 
 @app.post("/api/connect")
 async def connect_switch(connection: SwitchConnection):
+    """Connect to a switch and return its information"""
     try:
         session = session_manager.create_session(
             connection.ip,
@@ -77,12 +78,12 @@ async def connect_switch(connection: SwitchConnection):
             lowest_usage_interface=find_lowest_usage(disconnected_ports)
         )
 
-    except exceptions.NetmikoAuthenticationException:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    except exceptions.NetmikoTimeoutException:
-        raise HTTPException(status_code=408, detail="Connection timeout")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except exceptions.NetmikoAuthenticationException as exc:
+        raise HTTPException(status_code=401, detail="Authentication failed") from exc
+    except exceptions.NetmikoTimeoutException as exc:
+        raise HTTPException(status_code=408, detail="Connection timeout") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 def process_poe_status(poe_output: str):
     """Process PoE status output and return structured data"""
@@ -150,9 +151,10 @@ def find_lowest_usage(ports: list):
 
 @app.post("/api/disconnect")
 async def disconnect_switch():
+    """Disconnect from a switch"""
     try:
         session_manager.close_session()
         return {"status": "disconnected"}
-    except Exception:
+    except Exception as exc:
         # Log the error if needed
-        raise HTTPException(status_code=500, detail="Failed to disconnect properly")
+        raise HTTPException(status_code=500, detail="Failed to disconnect properly") from exc
