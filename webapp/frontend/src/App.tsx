@@ -15,6 +15,7 @@ interface Port {
   last_input: string
   input_packets: string
   output_packets: string
+  usage_percentage: number
 }
 
 interface PoEEntry {
@@ -107,17 +108,25 @@ function App() {
         `Switch IP: ${connectedIp}`,
         `Switch hostname: ${switchData.hostname}`,
         `Switch uptime: ${switchData.uptime}\n`,
-        "Not-connect Interfaces",
+        "-".repeat(103),
+        "Not-connect Interfaces:",
+        "-".repeat(103),
+        "Interface\tDescription\t\tVLAN\t\tLast Input\tPackets (in)\tPackets (out)\tPercent Use",
         switchData.disconnected_ports.map(port => 
-          `${port.port.padEnd(10)} ${port.description.padEnd(20)} VLAN: ${port.vlan.padEnd(5)} ` +
-          `Last Input: ${port.last_input.padEnd(15)} Packets: ${port.input_packets}/${port.output_packets}`
+          `${port.port.padEnd(10)}\t${port.description.padEnd(20)}\t${port.vlan.padEnd(8)}\t` +
+          `${port.last_input.padEnd(12)}\t${port.input_packets.padEnd(12)}\t${port.output_packets.padEnd(12)}\t` +
+          `${port.usage_percentage}%`
         ).join('\n'),
-        "\nPoE Details",
+        "\n" + "-".repeat(103),
+        "PoE Details:",
+        "-".repeat(103),
         switchData.poe_status?.map(poe =>
           `${poe.switch_no.padEnd(10)} Available: ${poe.available.padEnd(8)} ` +
           `Used: ${poe.used.padEnd(8)} Free: ${poe.free}`
         ).join('\n') || "No PoE data available",
-        "\nLowest Usage Interface",
+        "\n" + "-".repeat(103),
+        "Lowest Usage Interface:",
+        "-".repeat(103),
         switchData.lowest_usage_interface
           ? `Interface ${switchData.lowest_usage_interface.interface} has ` +
             `${switchData.lowest_usage_interface.usage_percentage}% the usage of the highest on the switch.`

@@ -35,16 +35,38 @@ async def connect_switch(connection: SwitchConnection):
 
         # Process disconnected ports
         disconnected_ports = []
+        all_stats = []
+
+        # First pass to get max usage
+        for interface in int_status:
+            stats = session.send_command(f'show int {interface["port"]}', use_textfsm=True)[0]
+            try:
+                total_packets = int(stats["input_packets"]) + int(stats["output_packets"])
+                all_stats.append(total_packets)
+            except ValueError:
+                continue
+
+        max_usage = max(all_stats) if all_stats else 1
+        
+        # Second pass to build response with percentages
         for interface in int_status:
             if interface['status'] == "notconnect":
                 stats = session.send_command(f'show int {interface["port"]}', use_textfsm=True)[0]
+                try:
+                    total_packets = int(stats["input_packets"]) + int(stats["output_packets"])
+                    percentage = round((total_packets / max_usage) * 100, 2) if max_usage > 0 else 0
+                except (ValueError, ZeroDivisionError):
+                    total_packets = 0
+                    percentage = 0
+                
                 disconnected_ports.append({
                     "port": interface["port"],
                     "description": interface.get("name", ""),
                     "vlan": interface.get("vlan") or interface.get("vlan_id"),
                     "last_input": stats["last_input"],
                     "input_packets": stats["input_packets"],
-                    "output_packets": stats["output_packets"]
+                    "output_packets": stats["output_packets"],
+                    "usage_percentage": percentage
                 })
 
         return SwitchResponse(

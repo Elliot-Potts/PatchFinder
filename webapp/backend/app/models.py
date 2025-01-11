@@ -13,6 +13,7 @@ class DisconnectedPort(BaseModel):
     last_input: str
     input_packets: str
     output_packets: str
+    usage_percentage: float
 
 class PoEStatus(BaseModel):
     switch_no: str

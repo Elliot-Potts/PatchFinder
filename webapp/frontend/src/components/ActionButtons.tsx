@@ -11,7 +11,7 @@ export function ActionButtons({ onDisconnect, onExport, isExporting }: ActionBut
   return (
     <div className="flex gap-2">
       <Button 
-        variant="outline" 
+        variant="destructive"
         onClick={onDisconnect}
         className="flex gap-2"
       >

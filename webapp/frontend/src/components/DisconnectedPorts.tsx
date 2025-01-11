@@ -15,13 +15,14 @@ interface Port {
   last_input: string
   input_packets: string
   output_packets: string
+  usage_percentage: number
 }
 
 export function DisconnectedPorts({ ports }: { ports: Port[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Not-connect Switchports</CardTitle>
+        <CardTitle>Non-connect Switchports</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -33,6 +34,7 @@ export function DisconnectedPorts({ ports }: { ports: Port[] }) {
               <TableHead>Last Input</TableHead>
               <TableHead>Input Packets</TableHead>
               <TableHead>Output Packets</TableHead>
+              <TableHead>Percent Use</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -44,6 +46,7 @@ export function DisconnectedPorts({ ports }: { ports: Port[] }) {
                 <TableCell>{port.last_input}</TableCell>
                 <TableCell>{port.input_packets}</TableCell>
                 <TableCell>{port.output_packets}</TableCell>
+                <TableCell>{port.usage_percentage}%</TableCell>
               </TableRow>
             ))}
           </TableBody>
