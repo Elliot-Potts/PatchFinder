@@ -1,7 +1,6 @@
 # A command-line utility for finding unused switchports
 # https://github.com/Elliot-Potts/PatchFinder
 
-
 import argparse
 import sys
 import os
@@ -97,7 +96,7 @@ def main(ip_address):
     switch_hostname = switch_connection.send_command("sh run | include hostname").split()[1]
     rich_console.print(f"[bold green][+][/bold green] Connected to {ip_address}  ([italic green]{switch_hostname}[/])\n")
     switch_uptime = switch_connection.send_command("sh version", use_textfsm=True)[0]['uptime']
-    switch_power = switch_connection.send_command("sh power inline", use_textfsm=True).replace("-", "").split()
+    switch_power = switch_connection.send_command("sh power inline").replace("-", "").split()
     int_status = switch_connection.send_command("sh int status", use_textfsm=True)
 
     switch_power_parsed = []
@@ -142,7 +141,7 @@ def main(ip_address):
         get_int_stats = switch_connection.send_command('show int {}'.format(interface['port']), use_textfsm=True)[0]
 
         if interface['status'] == "notconnect":
-            # Handle 'vlan' vs 'vlan_id' caveat via TextFSM
+            # [get_vlan] Handle 'vlan' vs 'vlan_id' caveat via TextFSM
             get_vlan = interface.get('vlan') or interface.get('vlan_id')
             disconnected_switchports[interface['port']] = [get_int_stats["input_packets"], 
                                                            get_int_stats["output_packets"], 
