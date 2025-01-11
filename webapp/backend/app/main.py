@@ -2,10 +2,12 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from netmiko import ConnectHandler, exceptions
+from netmiko import exceptions
 from .models import SwitchConnection, SwitchResponse
+from .session_manager import SessionManager
 
 app = FastAPI()
+session_manager = SessionManager()
 
 # Configure CORS
 app.add_middleware(
@@ -19,25 +21,23 @@ app.add_middleware(
 @app.post("/api/connect")
 async def connect_switch(connection: SwitchConnection):
     try:
-        # Connect to switch
-        switch = ConnectHandler(
-            host=connection.ip,
-            username=connection.username,
-            password=connection.password,
-            device_type="cisco_ios"
+        session = session_manager.create_session(
+            connection.ip,
+            connection.username,
+            connection.password
         )
 
         # Gather switch information
-        hostname = switch.send_command("sh run | include hostname").split()[1]
-        uptime = switch.send_command("sh version", use_textfsm=True)[0]['uptime']
-        int_status = switch.send_command("sh int status", use_textfsm=True)
-        poe_status = switch.send_command("sh power inline")
+        hostname = session.send_command("sh run | include hostname").split()[1]
+        uptime = session.send_command("sh version", use_textfsm=True)[0]['uptime']
+        int_status = session.send_command("sh int status", use_textfsm=True)
+        poe_status = session.send_command("sh power inline")
 
         # Process disconnected ports
         disconnected_ports = []
         for interface in int_status:
             if interface['status'] == "notconnect":
-                stats = switch.send_command(f'show int {interface["port"]}', use_textfsm=True)[0]
+                stats = session.send_command(f'show int {interface["port"]}', use_textfsm=True)[0]
                 disconnected_ports.append({
                     "port": interface["port"],
                     "description": interface.get("name", ""),
@@ -125,3 +125,12 @@ def find_lowest_usage(ports: list):
         }
     except Exception:
         return None
+
+@app.post("/api/disconnect")
+async def disconnect_switch():
+    try:
+        session_manager.close_session()
+        return {"status": "disconnected"}
+    except Exception:
+        # Log the error if needed
+        raise HTTPException(status_code=500, detail="Failed to disconnect properly")

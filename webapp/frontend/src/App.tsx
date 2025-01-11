@@ -6,6 +6,7 @@ import { PoEStatus } from "@/components/PoEStatus"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ActionButtons } from "@/components/ActionButtons"
 
 interface Port {
   port: string
@@ -39,6 +40,7 @@ function App() {
   const [switchData, setSwitchData] = useState<SwitchData | null>(null)
   const [connectedIp, setConnectedIp] = useState<string>("")
   const { toast } = useToast()
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleConnect = async (data: { ip: string; username: string; password: string }) => {
     setIsLoading(true)
@@ -73,6 +75,80 @@ function App() {
     }
   }
 
+  const handleDisconnect = async () => {
+    try {
+      await fetch("http://localhost:8000/api/disconnect", {
+        method: "POST"
+      })
+      setSwitchData(null)
+      setConnectedIp("")
+      toast({
+        title: "Disconnected",
+        description: "Successfully disconnected from switch"
+      })
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to disconnect"
+      })
+    }
+  }
+
+  const handleExport = async () => {
+    if (!switchData) return
+
+    setIsExporting(true)
+    try {
+      const content = [
+        "-".repeat(103),
+        `PATCHFINDER RESULTS on hostname ${switchData.hostname}`,
+        "-".repeat(103),
+        `Switch IP: ${connectedIp}`,
+        `Switch hostname: ${switchData.hostname}`,
+        `Switch uptime: ${switchData.uptime}\n`,
+        "Not-connect Interfaces",
+        switchData.disconnected_ports.map(port => 
+          `${port.port.padEnd(10)} ${port.description.padEnd(20)} VLAN: ${port.vlan.padEnd(5)} ` +
+          `Last Input: ${port.last_input.padEnd(15)} Packets: ${port.input_packets}/${port.output_packets}`
+        ).join('\n'),
+        "\nPoE Details",
+        switchData.poe_status?.map(poe =>
+          `${poe.switch_no.padEnd(10)} Available: ${poe.available.padEnd(8)} ` +
+          `Used: ${poe.used.padEnd(8)} Free: ${poe.free}`
+        ).join('\n') || "No PoE data available",
+        "\nLowest Usage Interface",
+        switchData.lowest_usage_interface
+          ? `Interface ${switchData.lowest_usage_interface.interface} has ` +
+            `${switchData.lowest_usage_interface.usage_percentage}% the usage of the highest on the switch.`
+          : "No usage data available"
+      ].join('\n')
+
+      const blob = new Blob([content], { type: 'text/plain' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${switchData.hostname}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "Export complete",
+        description: `Saved as ${switchData.hostname}.txt`
+      })
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: "Failed to export summary"
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <>
       <div className="min-h-screen bg-background p-8">
@@ -88,8 +164,15 @@ function App() {
               ? "grid-cols-1 lg:grid-cols-[400px,1fr]" 
               : "place-items-center"
           }`}>
-            <div className={`${!switchData ? "max-w-[400px] w-full" : ""}`}>
+            <div className={`${!switchData ? "max-w-[400px] w-full" : "space-y-4"}`}>
               <ConnectionForm onConnect={handleConnect} isLoading={isLoading} />
+              {switchData && (
+                <ActionButtons
+                  onDisconnect={handleDisconnect}
+                  onExport={handleExport}
+                  isExporting={isExporting}
+                />
+              )}
             </div>
             
             {switchData && (
