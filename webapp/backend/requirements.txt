@@ -3,3 +3,6 @@ uvicorn==0.27.0
 python-dotenv==1.0.0
 netmiko==4.3.0
 pydantic==2.6.1 
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart

@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ActionButtons } from "@/components/ActionButtons"
+import { AuthProvider, useAuth } from "@/contexts/AuthContext"
+import { LoginForm } from "@/components/LoginForm"
 
 interface Port {
   port: string
@@ -36,12 +38,13 @@ interface SwitchData {
   } | null
 }
 
-function App() {
+function AppContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [switchData, setSwitchData] = useState<SwitchData | null>(null)
   const [connectedIp, setConnectedIp] = useState<string>("")
   const { toast } = useToast()
   const [isExporting, setIsExporting] = useState(false)
+  const { isAuthenticated, token } = useAuth()
 
   const handleConnect = async (data: { ip: string; username: string; password: string }) => {
     setIsLoading(true)
@@ -50,6 +53,7 @@ function App() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       })
@@ -158,6 +162,21 @@ function App() {
     }
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex justify-center">
+            <div className="max-w-[400px] w-full">
+              <h1 className="text-4xl font-bold mb-8">PatchFinder</h1>
+              <LoginForm />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="min-h-screen bg-background p-8">
@@ -217,6 +236,14 @@ function App() {
       </div>
       <Toaster />
     </>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

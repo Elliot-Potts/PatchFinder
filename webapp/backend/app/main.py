@@ -1,10 +1,21 @@
 """Main module for the FastAPI application."""
 
 from netmiko import exceptions
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from .models import SwitchConnection, SwitchResponse
+from .models import SwitchConnection, SwitchResponse, UserCreate, Token
 from .session_manager import SessionManager
+from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Annotated
+from .auth import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    fake_users_db
+)
 
 app = FastAPI()
 session_manager = SessionManager()
@@ -14,12 +25,47 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
 
+@app.post("/api/register")
+async def register(user: UserCreate):
+    """Register a new user"""
+    if user.username in fake_users_db:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already registered"
+        )
+    
+    hashed_password = get_password_hash(user.password)
+    fake_users_db[user.username] = {
+        "username": user.username,
+        "hashed_password": hashed_password
+    }
+    return {"message": "User created successfully"}
+
+@app.post("/api/token", response_model=Token)
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    """Login to get access token"""
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @app.post("/api/connect")
-async def connect_switch(connection: SwitchConnection):
+async def connect_switch(
+    connection: SwitchConnection,
+    current_user: Annotated[dict, Depends(get_current_user)]
+):
     """Connect to a switch and return its information"""
     try:
         session = session_manager.create_session(

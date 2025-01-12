@@ -30,4 +30,19 @@ class SwitchResponse(BaseModel):
     uptime: str
     disconnected_ports: List[DisconnectedPort]
     poe_status: Optional[List[PoEStatus]] = None
-    lowest_usage_interface: Optional[LowestUsage] = None 
+    lowest_usage_interface: Optional[LowestUsage] = None
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None 
