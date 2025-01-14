@@ -1,13 +1,13 @@
 """Main module for the FastAPI application."""
 
+from datetime import timedelta
+from typing import Annotated
 from netmiko import exceptions
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
 from .models import SwitchConnection, SwitchResponse, UserCreate, Token
 from .session_manager import SessionManager
-from datetime import timedelta
-from fastapi.security import OAuth2PasswordRequestForm
-from typing import Annotated
 from .auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
@@ -37,7 +37,7 @@ async def register(user: UserCreate):
             status_code=400,
             detail="Username already registered"
         )
-    
+
     hashed_password = get_password_hash(user.password)
     fake_users_db[user.username] = {
         "username": user.username,
@@ -94,7 +94,7 @@ async def connect_switch(
                 continue
 
         max_usage = max(all_stats) if all_stats else 1
-        
+
         # Second pass to build response with percentages
         for interface in int_status:
             if interface['status'] == "notconnect":
@@ -105,7 +105,7 @@ async def connect_switch(
                 except (ValueError, ZeroDivisionError):
                     total_packets = 0
                     percentage = 0
-                
+
                 disconnected_ports.append({
                     "port": interface["port"],
                     "description": interface.get("name", ""),
@@ -202,5 +202,14 @@ async def disconnect_switch():
         session_manager.close_session()
         return {"status": "disconnected"}
     except Exception as exc:
-        # Log the error if needed
         raise HTTPException(status_code=500, detail="Failed to disconnect properly") from exc
+
+@app.post("/api/logout")
+async def logout(current_user: Annotated[dict, Depends(get_current_user)]):
+    """Logout and invalidate the current token"""
+    try:
+        # TODO - need to blacklist_token in auth.py OR remove blacklist functionality (just handle token expiration)
+        await blacklist_token(current_user["username"])
+        return {"status": "logged out"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Logout failed") from exc
