@@ -27,8 +27,15 @@ export function LoginForm() {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error("Login failed");
+      if (response.status === 401) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: "Invalid username or password"
+        });
+        setPassword("");
+        setIsLoading(false);
+        return;
       }
 
       const data = await response.json();
@@ -38,12 +45,11 @@ export function LoginForm() {
         title: "Success",
         description: "Logged in successfully",
       });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO: handle error
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Invalid username or password",
+        description: "An error occurred. Please try again."
       });
     } finally {
       setIsLoading(false);

@@ -247,6 +247,7 @@ function App() {
       <AuthProvider>
         <ThemeToggle />
         <AppContent />
+        <Toaster />
       </AuthProvider>
     </ThemeProvider>
   )
