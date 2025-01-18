@@ -9,7 +9,7 @@ from .models import TokenData
 # TODO - update this for production-ready / move to environment
 SECRET_KEY = "a-very-secret-key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 120  # 2 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 10
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

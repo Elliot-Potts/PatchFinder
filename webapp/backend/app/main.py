@@ -125,7 +125,7 @@ async def connect_switch(
         )
 
     except exceptions.NetmikoAuthenticationException as exc:
-        raise HTTPException(status_code=401, detail="Authentication failed") from exc
+        raise HTTPException(status_code=401, detail="SSH authentication failed") from exc
     except exceptions.NetmikoTimeoutException as exc:
         raise HTTPException(status_code=408, detail="Connection timeout") from exc
     except Exception as exc:

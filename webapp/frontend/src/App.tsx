@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ActionButtons } from "@/components/ActionButtons"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import { LoginForm } from "@/components/LoginForm"
+import { ThemeProvider } from "./contexts/ThemeContext"
+import { ThemeToggle } from "./components/ThemeToggle"
 
 interface Port {
   port: string
@@ -241,9 +243,12 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemeToggle />
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 
