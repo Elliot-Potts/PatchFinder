@@ -24,7 +24,7 @@ export function ConnectionForm({ onConnect, isLoading }: ConnectionFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Connect to Switch</CardTitle>
+        <CardTitle>Connect to a switch</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -4,3 +4,5 @@
 docs/
 
 ignored/
+
+webapp/backend/users.db

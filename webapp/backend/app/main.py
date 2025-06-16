@@ -6,6 +6,7 @@ from netmiko import exceptions
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 from .models import SwitchConnection, SwitchResponse, UserCreate, Token
 from .session_manager import SessionManager
 from .auth import (
@@ -14,7 +15,7 @@ from .auth import (
     create_access_token,
     get_current_user,
     get_password_hash,
-    fake_users_db
+    get_db,
 )
 
 app = FastAPI()
@@ -29,26 +30,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/api/register")
-async def register(user: UserCreate):
-    """Register a new user"""
-    if user.username in fake_users_db:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already registered"
-        )
-
-    hashed_password = get_password_hash(user.password)
-    fake_users_db[user.username] = {
-        "username": user.username,
-        "hashed_password": hashed_password
-    }
-    return {"message": "User created successfully"}
 
 @app.post("/api/token", response_model=Token)
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+async def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_db)
+):
     """Login to get access token"""
-    user = authenticate_user(form_data.username, form_data.password)
+    print("Login attempt with username:", form_data.username)
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,7 +47,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
