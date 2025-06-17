@@ -13,6 +13,13 @@ def main():
     db: Session = SessionLocal()
     username = input("Enter new username: ")
     password = getpass.getpass("Enter password: ")
+    confirm_password = getpass.getpass("Confirm password: ")
+    
+    if password != confirm_password:
+        print("Passwords do not match. Please try again.")
+        db.close()
+        return
+    
     hashed_password = get_password_hash(password)
     
     if db.query(User).filter(User.username == username).first():
