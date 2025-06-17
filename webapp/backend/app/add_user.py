@@ -1,7 +1,16 @@
+import os
+import sys
 import getpass
 from sqlalchemy.orm import Session
 from models import User, SessionLocal, create_db_and_tables
 from passlib.context import CryptContext
+
+# Initialize the database and tables if needed
+try:
+    create_db_and_tables()
+except Exception as e:
+    print(f"Error creating db and tables: {e}")
+    sys.exit(1)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -9,7 +18,6 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 def main():
-    create_db_and_tables()
     db: Session = SessionLocal()
     username = input("Enter new username: ")
     password = getpass.getpass("Enter password: ")

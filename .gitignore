@@ -6,3 +6,5 @@ docs/
 ignored/
 
 webapp/backend/users.db
+
+webapp/backend/app/users.db

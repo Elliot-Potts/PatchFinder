@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -8,7 +6,6 @@ services:
     env_file:
       - .env
     volumes:
-      # - userdb-data:/app/app/users.db
       - ./backend/app/users.db:/app/app/users.db
     ports:
       - "8000:8000"
