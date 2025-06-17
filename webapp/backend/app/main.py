@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from .models import SwitchConnection, SwitchResponse, UserCreate, Token
+from .models import SwitchConnection, SwitchResponse, UserCreate, Token, create_db_and_tables
 from .session_manager import SessionManager
 from .auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -21,12 +21,15 @@ from .auth import (
 app = FastAPI()
 session_manager = SessionManager()
 
+# Ensure the users table exists on container startup
+create_db_and_tables()
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],  # Allow all origins for development; needs changed for production
     allow_credentials=True,
-    allow_methods=["POST", "GET"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
